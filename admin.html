@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Bocil Pintar</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#3E3A5C; --krem:#FFF9EC; --koral:#FF7E67; --biru:#4FC3F7;
+    --hijau:#66BB6A; --merah:#E05555; --abu:#6b6890;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Nunito',sans-serif;background:var(--krem);color:var(--tinta);padding:24px 16px 80px;}
+  h1,h2,button{font-family:'Fredoka',sans-serif;}
+  .wadah{max-width:760px;margin:0 auto;}
+  h1{font-size:1.8rem;margin-bottom:4px;}
+  .sub{color:var(--abu);font-weight:700;margin-bottom:24px;}
+  .panel{background:#fff;border-radius:18px;padding:22px;box-shadow:0 6px 0 rgba(62,58,92,.07);margin-bottom:20px;}
+  label{display:block;font-weight:800;font-size:.85rem;margin:12px 0 4px;}
+  input,textarea{
+    width:100%;padding:10px 12px;border:2px solid #e3e0f0;border-radius:10px;
+    font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:600;color:var(--tinta);
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--biru);}
+  button{
+    border:none;border-radius:999px;padding:10px 22px;font-size:.95rem;font-weight:600;
+    cursor:pointer;color:#fff;background:var(--biru);box-shadow:0 4px 0 rgba(0,0,0,.15);
+    transition:transform .1s;
+  }
+  button:hover{transform:translateY(-2px);}
+  button:active{transform:translateY(2px);box-shadow:none;}
+  button.hijau{background:var(--hijau);}
+  button.merah{background:var(--merah);}
+  button.kecil{padding:6px 14px;font-size:.82rem;}
+  button:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .baris-tombol{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .item{
+    border:2px solid #e3e0f0;border-radius:14px;padding:14px;margin-bottom:12px;
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .item .emoji{font-size:1.9rem;line-height:1;}
+  .item .isi{flex:1;min-width:0;}
+  .item .isi strong{display:block;font-size:1.05rem;}
+  .item .isi span{font-size:.85rem;color:var(--abu);font-weight:600;word-break:break-all;display:block;}
+  .item .aksi{display:flex;flex-direction:column;gap:6px;}
+  .status{margin-top:14px;font-weight:800;font-size:.9rem;min-height:1.2em;}
+  .status.ok{color:var(--hijau);}
+  .status.gagal{color:var(--merah);}
+  .peringatan{
+    background:#FFF3D6;border:2px solid #f0d48a;border-radius:12px;
+    padding:12px 14px;font-size:.85rem;font-weight:700;color:#7a6320;margin-bottom:18px;line-height:1.5;
+  }
+  dialog{border:none;border-radius:18px;padding:22px;max-width:480px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  dialog::backdrop{background:rgba(62,58,92,.5);}
+  #layarEditor{display:none;}
+</style>
+</head>
+<body>
+<div class="wadah">
+  <h1>🔐 Admin Bocil Pintar</h1>
+  <p class="sub">Kelola daftar aplikasi di halaman utama</p>
+
+  <!-- ====== LANGKAH 1: TOKEN ====== -->
+  <div class="panel" id="layarToken">
+    <h2>Masuk dengan GitHub Token</h2>
+    <div class="peringatan">
+      🛡️ <b>Cara kerja keamanan:</b> halaman ini tidak punya password sendiri — semua perubahan
+      disimpan langsung ke GitHub, jadi <b>hanya orang yang punya token GitHub-mu</b> yang bisa
+      mengubah apapun. Token tidak pernah disimpan di kode atau server, hanya di tab browser ini
+      dan hilang saat tab ditutup.
+    </div>
+    <label for="inpToken">Fine-grained Personal Access Token</label>
+    <input type="password" id="inpToken" placeholder="github_pat_..." autocomplete="off">
+    <p style="font-size:.82rem;color:var(--abu);font-weight:600;margin-top:8px;">
+      Buat di GitHub → Settings → Developer settings → Fine-grained tokens.
+      Beri akses <b>hanya ke repo situs ini</b> dengan izin <b>Contents: Read and write</b> saja.
+    </p>
+    <div class="baris-tombol">
+      <button class="hijau" id="btnMasuk">Masuk</button>
+    </div>
+    <p class="status" id="statusToken"></p>
+  </div>
+
+  <!-- ====== LANGKAH 2: EDITOR ====== -->
+  <div id="layarEditor">
+    <div class="panel">
+      <h2>Daftar Aplikasi</h2>
+      <div id="daftar"></div>
+      <div class="baris-tombol">
+        <button id="btnTambah">➕ Tambah Aplikasi</button>
+        <button class="hijau" id="btnSimpan">💾 Simpan ke GitHub</button>
+        <button class="merah" id="btnKeluar">Keluar</button>
+      </div>
+      <p class="status" id="statusSimpan"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ====== DIALOG EDIT ====== -->
+<dialog id="dlg">
+  <h2 id="dlgJudul" style="font-family:'Fredoka',sans-serif;margin-bottom:8px;">Tambah Aplikasi</h2>
+  <label>Nama</label><input id="fNama" maxlength="60">
+  <label>Emoji</label><input id="fEmoji" maxlength="8" placeholder="🎨">
+  <label>Deskripsi</label><textarea id="fDesk" rows="3" maxlength="200"></textarea>
+  <label>Link (harus https)</label><input id="fUrl" placeholder="https://bocilpintar.web.id/nama-repo/">
+  <label>Warna</label><input id="fWarna" type="color" value="#4FC3F7" style="height:44px;padding:4px;">
+  <div class="baris-tombol">
+    <button class="hijau" id="btnDlgSimpan">Simpan</button>
+    <button class="merah" id="btnDlgBatal" type="button">Batal</button>
+  </div>
+  <p class="status gagal" id="dlgError"></p>
+</dialog>
+
+<script>
+"use strict";
+/* ================= KONFIGURASI =================
+   Ganti sesuai repo tempat situs ini di-host. */
+const KONFIG = {
+  owner : "lingkarmaya",
+  repo  : "lingkarmaya.github.io",  // repo situs utama
+  branch: "main",
+  file  : "links.json"
+};
+/* ================================================ */
+
+let token = "";
+let shaFile = null;   // sha links.json terakhir (wajib untuk update di GitHub)
+let apps = [];
+let indexEdit = -1;   // -1 = tambah baru
+
+const $ = id => document.getElementById(id);
+
+// --- keamanan dasar sisi klien ---
+function urlAman(u){
+  try{ return new URL(u).protocol === "https:"; }catch(e){ return false; }
+}
+// encode/decode base64 yang aman untuk UTF-8 (emoji dll.)
+function keBase64(str){ return btoa(String.fromCharCode(...new TextEncoder().encode(str))); }
+function dariBase64(b64){ return new TextDecoder().decode(Uint8Array.from(atob(b64), c=>c.charCodeAt(0))); }
+
+function apiUrl(){
+  return `https://api.github.com/repos/${KONFIG.owner}/${KONFIG.repo}/contents/${KONFIG.file}?ref=${KONFIG.branch}`;
+}
+function headers(){
+  return {
+    "Authorization": `Bearer ${token}`,
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+}
+
+// ====== MASUK ======
+$("btnMasuk").addEventListener("click", async ()=>{
+  token = $("inpToken").value.trim();
+  const st = $("statusToken");
+  if(!token){ st.textContent = "Token belum diisi."; st.className = "status gagal"; return; }
+  st.textContent = "Memeriksa token & memuat data…"; st.className = "status";
+  try{
+    const r = await fetch(apiUrl(), {headers: headers()});
+    if(r.status === 401){ throw new Error("Token salah atau kedaluwarsa."); }
+    if(r.status === 404){ throw new Error("links.json tidak ditemukan — cek nama repo/branch di KONFIG, atau token tidak punya akses ke repo ini."); }
+    if(!r.ok){ throw new Error("GitHub menolak permintaan (kode " + r.status + ")."); }
+    const data = await r.json();
+    shaFile = data.sha;
+    apps = (JSON.parse(dariBase64(data.content.replace(/\n/g,""))).apps) || [];
+    sessionStorage.setItem("bp_token", token); // hanya selama tab terbuka
+    $("layarToken").style.display = "none";
+    $("layarEditor").style.display = "block";
+    gambarDaftar();
+  }catch(e){
+    st.textContent = "❌ " + e.message; st.className = "status gagal";
+  }
+});
+
+// otomatis masuk lagi kalau token masih ada di tab ini
+window.addEventListener("DOMContentLoaded", ()=>{
+  const t = sessionStorage.getItem("bp_token");
+  if(t){ $("inpToken").value = t; $("btnMasuk").click(); }
+});
+
+// ====== DAFTAR ======
+function gambarDaftar(){
+  const wadah = $("daftar");
+  wadah.innerHTML = "";
+  if(apps.length === 0){
+    wadah.innerHTML = "<p style='color:var(--abu);font-weight:700;'>Belum ada aplikasi. Klik “Tambah Aplikasi”.</p>";
+    return;
+  }
+  apps.forEach((app, i)=>{
+    const div = document.createElement("div");
+    div.className = "item";
+    div.style.borderColor = app.warna || "#e3e0f0";
+
+    const em = document.createElement("div");
+    em.className = "emoji"; em.textContent = app.emoji || "⭐";
+
+    const isi = document.createElement("div"); isi.className = "isi";
+    const nm = document.createElement("strong"); nm.textContent = app.nama;      // textContent = aman dari XSS
+    const ur = document.createElement("span");   ur.textContent = app.url;
+    const ds = document.createElement("span");   ds.textContent = app.deskripsi;
+    isi.append(nm, ur, ds);
+
+    const aksi = document.createElement("div"); aksi.className = "aksi";
+    const bEdit  = document.createElement("button"); bEdit.className = "kecil"; bEdit.textContent = "✏️ Edit";
+    const bHapus = document.createElement("button"); bHapus.className = "kecil merah"; bHapus.textContent = "🗑️ Hapus";
+    const bNaik  = document.createElement("button"); bNaik.className = "kecil"; bNaik.textContent = "⬆️"; bNaik.disabled = i===0;
+    bEdit.onclick  = ()=> bukaDialog(i);
+    bHapus.onclick = ()=>{ if(confirm("Hapus \"" + app.nama + "\"?")){ apps.splice(i,1); gambarDaftar(); } };
+    bNaik.onclick  = ()=>{ [apps[i-1],apps[i]] = [apps[i],apps[i-1]]; gambarDaftar(); };
+    aksi.append(bEdit, bNaik, bHapus);
+
+    div.append(em, isi, aksi);
+    wadah.appendChild(div);
+  });
+}
+
+// ====== DIALOG ======
+function bukaDialog(i){
+  indexEdit = i;
+  const app = i >= 0 ? apps[i] : {nama:"",emoji:"",deskripsi:"",url:"https://",warna:"#4FC3F7"};
+  $("dlgJudul").textContent = i >= 0 ? "Edit Aplikasi" : "Tambah Aplikasi";
+  $("fNama").value = app.nama; $("fEmoji").value = app.emoji;
+  $("fDesk").value = app.deskripsi; $("fUrl").value = app.url;
+  $("fWarna").value = /^#[0-9a-fA-F]{6}$/.test(app.warna||"") ? app.warna : "#4FC3F7";
+  $("dlgError").textContent = "";
+  $("dlg").showModal();
+}
+$("btnTambah").onclick = ()=> bukaDialog(-1);
+$("btnDlgBatal").onclick = ()=> $("dlg").close();
+$("btnDlgSimpan").onclick = ()=>{
+  const nama = $("fNama").value.trim();
+  const url  = $("fUrl").value.trim();
+  if(!nama){ $("dlgError").textContent = "Nama wajib diisi."; return; }
+  if(!urlAman(url)){ $("dlgError").textContent = "Link harus diawali https://"; return; }
+  const app = {
+    nama, emoji: $("fEmoji").value.trim() || "⭐",
+    deskripsi: $("fDesk").value.trim(),
+    url, warna: $("fWarna").value
+  };
+  if(indexEdit >= 0) apps[indexEdit] = app; else apps.push(app);
+  $("dlg").close();
+  gambarDaftar();
+};
+
+// ====== SIMPAN KE GITHUB ======
+$("btnSimpan").addEventListener("click", async ()=>{
+  const st = $("statusSimpan");
+  st.textContent = "Menyimpan ke GitHub…"; st.className = "status";
+  $("btnSimpan").disabled = true;
+  try{
+    const isi = JSON.stringify({apps}, null, 2) + "\n";
+    const r = await fetch(apiUrl().split("?")[0], {
+      method: "PUT",
+      headers: {...headers(), "Content-Type":"application/json"},
+      body: JSON.stringify({
+        message: "Perbarui daftar aplikasi via halaman admin",
+        content: keBase64(isi),
+        sha: shaFile,
+        branch: KONFIG.branch
+      })
+    });
+    if(r.status === 409){ throw new Error("File berubah di tempat lain — muat ulang halaman lalu coba lagi."); }
+    if(!r.ok){ throw new Error("Gagal menyimpan (kode " + r.status + ")."); }
+    const data = await r.json();
+    shaFile = data.content.sha;
+    st.textContent = "✅ Tersimpan! Halaman utama akan terbarui dalam 1-2 menit (cache GitHub Pages).";
+    st.className = "status ok";
+  }catch(e){
+    st.textContent = "❌ " + e.message; st.className = "status gagal";
+  }finally{
+    $("btnSimpan").disabled = false;
+  }
+});
+
+// ====== KELUAR ======
+$("btnKeluar").onclick = ()=>{
+  sessionStorage.removeItem("bp_token");
+  token = ""; apps = []; shaFile = null;
+  location.reload();
+};
+</script>
+</body>
+</html>
