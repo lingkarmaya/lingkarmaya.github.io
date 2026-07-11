@@ -1,0 +1,34 @@
+<!-- ================= TOMBOL PULANG BOCIL PINTAR =================
+     Tempel potongan ini tepat SEBELUM </body> di index.html
+     tiap game (catur, koding, menulis, matematika).
+     Tidak butuh file lain — sudah lengkap sendiri. -->
+<a href="https://bocilpintar.web.id/" id="bp-pulang" aria-label="Kembali ke halaman utama Bocil Pintar">
+  <span class="bp-ikon" aria-hidden="true">🏠</span>
+  <span class="bp-teks">Beranda</span>
+</a>
+<style>
+  #bp-pulang{
+    position:fixed;top:12px;left:12px;z-index:99999;
+    display:flex;align-items:center;gap:7px;
+    background:#FF7E67;color:#fff;text-decoration:none;
+    font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:15px;
+    padding:9px 15px 9px 12px;border-radius:999px;
+    box-shadow:0 4px 0 #d95c46,0 6px 14px rgba(0,0,0,.18);
+    transition:transform .12s ease,box-shadow .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #bp-pulang:hover{transform:translateY(-2px);box-shadow:0 6px 0 #d95c46,0 8px 16px rgba(0,0,0,.2);}
+  #bp-pulang:active{transform:translateY(3px);box-shadow:0 1px 0 #d95c46;}
+  #bp-pulang:focus-visible{outline:3px solid #3E3A5C;outline-offset:3px;}
+  #bp-pulang .bp-ikon{font-size:18px;line-height:1;}
+  /* di layar kecil: cukup ikon rumah biar tidak menutupi game */
+  @media (max-width:520px){
+    #bp-pulang{padding:10px;gap:0;}
+    #bp-pulang .bp-teks{display:none;}
+    #bp-pulang .bp-ikon{font-size:20px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #bp-pulang{transition:none;}
+  }
+</style>
+<!-- ============= AKHIR TOMBOL PULANG ============= -->
